@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SalaryFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1e2430;
+    --border: #2a3040;
+    --needs: #ff6b6b;
+    --wants: #ffd93d;
+    --savings: #6bcb77;
+    --needs-dim: rgba(255,107,107,0.15);
+    --wants-dim: rgba(255,217,61,0.15);
+    --savings-dim: rgba(107,203,119,0.15);
+    --text: #f0f2f5;
+    --text-muted: #6b7280;
+    --accent: #4f8ef7;
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Ambient glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 48px 24px 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .date-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ── CUTOFF SELECTOR ── */
+  .cutoff-section { padding: 0 24px 20px; position: relative; z-index: 1; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .cutoff-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .cutoff-tab {
+    flex: 1;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .cutoff-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── SALARY CARD ── */
+  .salary-card {
+    margin: 0 24px 20px;
+    background: linear-gradient(135deg, #1a2035 0%, #0f1520 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .salary-card::after {
+    content: '₱';
+    position: absolute;
+    right: -10px; bottom: -20px;
+    font-size: 120px;
+    font-weight: 800;
+    color: rgba(79,142,247,0.05);
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+  }
+  .salary-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+  .salary-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  .salary-amount span { font-size: 20px; color: var(--text-muted); }
+  .salary-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .salary-input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .salary-input:focus { border-color: var(--accent); }
+  .salary-input::placeholder { color: var(--text-muted); }
+  .btn-set {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-set:hover { opacity: 0.85; }
+
+  /* ── SPLIT CARDS ── */
+  .split-section { padding: 0 24px 20px; position: relative; z-index: 1; }
+  .split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .split-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .split-card:first-child { grid-column: 1 / -1; }
+  .split-card:hover { transform: translateY(-2px); }
+
+  .split-card.needs { border-top: 3px solid var(--needs); }
+  .split-card.wants { border-top: 3px solid var(--wants); }
+  .split-card.savings { border-top: 3px solid var(--savings); }
+
+  .split-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+  .split-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .split-amt {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .split-card.needs .split-amt { color: var(--needs); }
+  .split-card.wants .split-amt { color: var(--wants); }
+  .split-card.savings .split-amt { color: var(--savings); }
+  .split-pct {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+  }
+  .split-bar {
+    margin-top: 10px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .split-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .needs .split-bar-fill { background: var(--needs); }
+  .wants .split-bar-fill { background: var(--wants); }
+  .savings .split-bar-fill { background: var(--savings); }
+
+  /* Percentage sliders */
+  .pct-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .pct-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+  }
+  .needs-card .pct-slider { background: var(--needs-dim); accent-color: var(--needs); }
+  .wants-card .pct-slider { background: var(--wants-dim); accent-color: var(--wants); }
+  .savings-card .pct-slider { background: var(--savings-dim); accent-color: var(--savings); }
+  .pct-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 6px;
+    min-width: 38px;
+    text-align: center;
+  }
+  .needs-card .pct-badge { background: var(--needs-dim); color: var(--needs); }
+  .wants-card .pct-badge { background: var(--wants-dim); color: var(--wants); }
+  .savings-card .pct-badge { background: var(--savings-dim); color: var(--savings); }
+
+  /* ── TRACKER ── */
+  .tracker-section { padding: 0 24px 20px; position: relative; z-index: 1; }
+  .tracker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .btn-add {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-add:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* Add item form */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .add-form.open { display: block; animation: slideDown 0.2s ease; }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .form-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+  .btn-confirm {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Expense items */
+  .expense-list { display: flex; flex-direction: column; gap: 8px; }
+  .expense-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+  .expense-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .expense-dot.needs { background: var(--needs); }
+  .expense-dot.wants { background: var(--wants); }
+  .expense-dot.savings { background: var(--savings); }
+  .expense-info { flex: 1; }
+  .expense-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .expense-cat {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .expense-cat.needs { color: var(--needs); }
+  .expense-cat.wants { color: var(--wants); }
+  .expense-cat.savings { color: var(--savings); }
+  .expense-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    transition: color 0.2s;
+  }
+  .btn-del:hover { color: var(--needs); }
+
+  /* ── SUMMARY ── */
+  .summary-section { padding: 0 24px 20px; position: relative; z-index: 1; }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .summary-row-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .summary-row-val.pos { color: var(--savings); }
+  .summary-row-val.neg { color: var(--needs); }
+
+  /* ── NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(13,15,20,0.9);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 12px 0 24px;
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    font-family: 'Syne', sans-serif;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon { font-size: 20px; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* History page */
+  .history-month {
+    margin-bottom: 16px;
+  }
+  .history-month-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .history-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-cutoff { font-size: 13px; font-weight: 600; }
+  .history-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .history-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* Progress ring */
+  .ring-container {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 8px 0 16px;
+  }
+  .ring-wrap { text-align: center; }
+  .ring-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
+  .ring-label.needs { color: var(--needs); }
+  .ring-label.wants { color: var(--wants); }
+  .ring-label.savings { color: var(--savings); }
+  svg.ring { transform: rotate(-90deg); }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="page-home" class="page active">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Salary<span>Flow</span></div>
+      <div class="date-badge" id="dateBadge"></div>
+    </div>
+  </div>
+
+  <!-- Cutoff Selector -->
+  <div class="cutoff-section">
+    <div class="section-label">Pay Cutoff</div>
+    <div class="cutoff-tabs">
+      <button class="cutoff-tab active" data-cutoff="1st" onclick="selectCutoff('1st', this)">1st (1–15)</button>
+      <button class="cutoff-tab" data-cutoff="2nd" onclick="selectCutoff('2nd', this)">2nd (16–30)</button>
+    </div>
+  </div>
+
+  <!-- Salary Card -->
+  <div class="salary-card">
+    <div class="salary-label">NET SALARY THIS CUTOFF</div>
+    <div class="salary-amount" id="salaryDisplay"><span>₱</span>0.00</div>
+    <div class="salary-input-row">
+      <input class="salary-input" type="number" id="salaryInput" placeholder="Enter your salary..." min="0" step="0.01">
+      <button class="btn-set" onclick="setSalary()">Set</button>
+    </div>
+  </div>
+
+  <!-- Split Overview -->
+  <div class="split-section">
+    <div class="section-label">Your Budget Split</div>
+
+    <!-- Needs -->
+    <div class="split-card needs needs-card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="split-icon">🏠</div>
+        <div style="flex:1">
+          <div class="split-name">Needs</div>
+          <div class="split-amt" id="needsAmt">₱0.00</div>
+        </div>
+        <div>
+          <div class="pct-badge needs-card" id="needsBadge" style="background:rgba(255,107,107,0.15);color:var(--needs);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;min-width:38px;text-align:center;">50%</div>
+        </div>
+      </div>
+      <div class="pct-row">
+        <input class="pct-slider" type="range" min="0" max="100" value="50" id="needsSlider" oninput="updateSplits()">
+      </div>
+      <div class="split-bar"><div class="split-bar-fill" id="needsBar" style="width:50%"></div></div>
+    </div>
+
+    <div class="split-grid">
+      <!-- Wants -->
+      <div class="split-card wants wants-card">
+        <div class="split-icon">🛍️</div>
+        <div class="split-name">Wants</div>
+        <div class="split-amt" id="wantsAmt">₱0.00</div>
+        <div class="pct-row">
+          <input class="pct-slider" type="range" min="0" max="100" value="30" id="wantsSlider" oninput="updateSplits()">
+        </div>
+        <div class="pct-badge wants-card" id="wantsBadge" style="background:rgba(255,217,61,0.15);color:var(--wants);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;text-align:center;margin-top:6px;">30%</div>
+        <div class="split-bar"><div class="split-bar-fill" id="wantsBar" style="width:30%"></div></div>
+      </div>
+
+      <!-- Savings -->
+      <div class="split-card savings savings-card">
+        <div class="split-icon">💰</div>
+        <div class="split-name">Savings</div>
+        <div class="split-amt" id="savingsAmt">₱0.00</div>
+        <div class="pct-row">
+          <input class="pct-slider" type="range" min="0" max="100" value="20" id="savingsSlider" oninput="updateSplits()">
+        </div>
+        <div class="pct-badge savings-card" id="savingsBadge" style="background:rgba(107,203,119,0.15);color:var(--savings);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;text-align:center;margin-top:6px;">20%</div>
+        <div class="split-bar"><div class="split-bar-fill" id="savingsBar" style="width:20%"></div></div>
+      </div>
+    </div>
+
+    <!-- Total pct warning -->
+    <div id="pctWarning" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;font-size:12px;color:var(--needs);text-align:center;"></div>
+  </div>
+</div>
+
+<!-- ── TRACKER PAGE ── -->
+<div id="page-tracker" class="page">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Salary<span>Flow</span></div>
+      <div class="date-badge" id="dateBadge2"></div>
+    </div>
+  </div>
+
+  <!-- Summary Rings -->
+  <div style="padding:0 24px;position:relative;z-index:1;">
+    <div class="section-label">Budget Remaining</div>
+    <div class="ring-container">
+      <div class="ring-wrap">
+        <svg class="ring" width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,107,107,0.15)" stroke-width="8"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="#ff6b6b" stroke-width="8" stroke-dasharray="175.9" id="needsRing" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-label needs">Needs</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:#f0f2f5;margin-top:2px;" id="needsRemText">₱0</div>
+      </div>
+      <div class="ring-wrap">
+        <svg class="ring" width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,217,61,0.15)" stroke-width="8"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="#ffd93d" stroke-width="8" stroke-dasharray="175.9" id="wantsRing" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-label wants">Wants</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:#f0f2f5;margin-top:2px;" id="wantsRemText">₱0</div>
+      </div>
+      <div class="ring-wrap">
+        <svg class="ring" width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(107,203,119,0.15)" stroke-width="8"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="#6bcb77" stroke-width="8" stroke-dasharray="175.9" id="savingsRing" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="ring-label savings">Savings</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:#f0f2f5;margin-top:2px;" id="savingsRemText">₱0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tracker-section">
+    <div class="tracker-header">
+      <div class="section-label" style="margin:0">Expenses</div>
+      <button class="btn-add" onclick="toggleForm()">+ Add</button>
+    </div>
+
+    <!-- Add Form -->
+    <div class="add-form" id="addForm">
+      <div class="form-row">
+        <input class="form-input" id="expName" placeholder="Expense name" style="flex:2">
+        <select class="form-select" id="expCat">
+          <option value="needs">🏠 Needs</option>
+          <option value="wants">🛍️ Wants</option>
+          <option value="savings">💰 Savings</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input class="form-input" id="expAmt" type="number" placeholder="Amount (₱)" min="0" step="0.01" style="flex:1">
+      </div>
+      <button class="btn-confirm" onclick="addExpense()">Add Expense</button>
+    </div>
+
+    <!-- Expense List -->
+    <div class="expense-list" id="expenseList">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">No expenses yet.<br>Tap "+ Add" to track spending.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUMMARY PAGE ── -->
+<div id="page-summary" class="page">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Salary<span>Flow</span></div>
+      <div class="date-badge" id="dateBadge3"></div>
+    </div>
+  </div>
+
+  <div class="summary-section">
+    <div class="section-label">This Cutoff Summary</div>
+    <div class="summary-card">
+      <div class="summary-row">
+        <span class="summary-row-label">Gross Salary</span>
+        <span class="summary-row-val" id="sumSalary">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">🏠 Needs Budget</span>
+        <span class="summary-row-val" style="color:var(--needs)" id="sumNeedsBudget">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">🏠 Needs Spent</span>
+        <span class="summary-row-val neg" id="sumNeedsSpent">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">🛍️ Wants Budget</span>
+        <span class="summary-row-val" style="color:var(--wants)" id="sumWantsBudget">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">🛍️ Wants Spent</span>
+        <span class="summary-row-val neg" id="sumWantsSpent">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">💰 Savings Budget</span>
+        <span class="summary-row-val" style="color:var(--savings)" id="sumSavingsBudget">₱0.00</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-label">💰 Savings Actual</span>
+        <span class="summary-row-val pos" id="sumSavingsActual">₱0.00</span>
+      </div>
+      <div class="summary-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
+        <span class="summary-row-label" style="color:var(--text);font-size:13px;font-weight:700">Remaining</span>
+        <span class="summary-row-val pos" id="sumRemaining">₱0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="summary-section">
+    <div class="section-label">History</div>
+    <div id="historyList">
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <div class="empty-text">No past cutoffs saved yet.</div>
+      </div>
+    </div>
+    <button onclick="saveCutoff()" style="width:100%;margin-top:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">💾 Save This Cutoff</button>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="goPage('home')">
+    <span class="nav-icon">🏠</span>Home
+  </button>
+  <button class="nav-item" id="nav-tracker" onclick="goPage('tracker')">
+    <span class="nav-icon">📊</span>Tracker
+  </button>
+  <button class="nav-item" id="nav-summary" onclick="goPage('summary')">
+    <span class="nav-icon">📋</span>Summary
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── SUPABASE CONFIG ──────────────────────────────────
+const SUPABASE_URL = 'https://uqicigxxfgtxxrlyuygm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxaWNpZ3h4Zmd0eHhybHl1eWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NjA4OTAsImV4cCI6MjA5MzIzNjg5MH0.6VGStCwF0K9zMLlTcgqpdLHTkUP7bEIZtY-wo8wx6o8';
+const USE_SUPABASE = true;
+
+// Simple stable user ID stored in localStorage (no auth needed)
+let USER_ID = localStorage.getItem('sf_user_id');
+if (!USER_ID) {
+  USER_ID = 'user_' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('sf_user_id', USER_ID);
+}
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ─── STATE ───────────────────────────────────────────
+let state = {
+  salary: 0,
+  cutoff: '1st',
+  needsPct: 50,
+  wantsPct: 30,
+  savingsPct: 20,
+  expenses: [],
+  history: []
+};
+
+// Fallback: load from localStorage
+try {
+  const saved = localStorage.getItem('salaryflow');
+  if (saved) state = JSON.parse(saved);
+} catch(e){}
+
+function saveLocal() {
+  try { localStorage.setItem('salaryflow', JSON.stringify(state)); } catch(e){}
+}
+
+// ─── SUPABASE: LOAD ALL DATA ──────────────────────────
+async function loadFromSupabase() {
+  try {
+    showToast('Syncing…');
+
+    // Load settings for current cutoff
+    const settings = await sbFetch(
+      `salary_settings?user_id=eq.${USER_ID}&cutoff=eq.${state.cutoff}&select=*`
+    );
+    if (settings && settings.length > 0) {
+      const s = settings[0];
+      state.salary   = parseFloat(s.salary)   || 0;
+      state.needsPct = parseInt(s.needs_pct)   || 50;
+      state.wantsPct = parseInt(s.wants_pct)   || 30;
+      state.savingsPct = parseInt(s.savings_pct) || 20;
+    }
+
+    // Load expenses for current cutoff
+    const expenses = await sbFetch(
+      `expenses?user_id=eq.${USER_ID}&cutoff=eq.${state.cutoff}&select=*&order=created_at.desc`
+    );
+    if (expenses) {
+      state.expenses = expenses.map(e => ({
+        id: e.id,
+        name: e.name,
+        amount: parseFloat(e.amount),
+        category: e.category,
+        cutoff: e.cutoff,
+        date: e.expense_date || ''
+      }));
+    }
+
+    // Load history
+    const history = await sbFetch(
+      `cutoff_history?user_id=eq.${USER_ID}&select=*&order=saved_at.desc`
+    );
+    if (history) {
+      state.history = history.map(h => ({
+        cutoff: h.cutoff,
+        month: h.month,
+        salary: parseFloat(h.salary),
+        spent: parseFloat(h.spent),
+        date: new Date(h.saved_at).toLocaleDateString('en-PH')
+      }));
+    }
+
+    saveLocal();
+    refreshAll();
+    showToast('Synced ✓');
+  } catch(err) {
+    console.error('Supabase load error:', err);
+    showToast('Offline – using local data');
+  }
+}
+
+// ─── SUPABASE: UPSERT SETTINGS ───────────────────────
+async function saveSettings() {
+  if (!USE_SUPABASE) return saveLocal();
+  saveLocal();
+  try {
+    await sbFetch('salary_settings', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates,return=minimal',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
+        user_id:     USER_ID,
+        cutoff:      state.cutoff,
+        salary:      state.salary,
+        needs_pct:   state.needsPct,
+        wants_pct:   state.wantsPct,
+        savings_pct: state.savingsPct
+      })
+    });
+  } catch(err) { console.error('saveSettings error:', err); }
+}
+
+// ─── SUPABASE: INSERT EXPENSE ─────────────────────────
+async function insertExpense(exp) {
+  if (!USE_SUPABASE) return;
+  try {
+    const rows = await sbFetch('expenses', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: JSON.stringify({
+        user_id:      USER_ID,
+        cutoff:       exp.cutoff,
+        name:         exp.name,
+        amount:       exp.amount,
+        category:     exp.category,
+        expense_date: exp.date
+      })
+    });
+    // Replace temp numeric id with Supabase UUID
+    if (rows && rows[0]) {
+      const idx = state.expenses.findIndex(e => e.id === exp.id);
+      if (idx !== -1) state.expenses[idx].id = rows[0].id;
+      saveLocal();
+    }
+  } catch(err) { console.error('insertExpense error:', err); }
+}
+
+// ─── SUPABASE: DELETE EXPENSE ─────────────────────────
+async function deleteExpenseFromDB(id) {
+  if (!USE_SUPABASE) return;
+  try {
+    await sbFetch(`expenses?id=eq.${id}&user_id=eq.${USER_ID}`, {
+      method: 'DELETE',
+      prefer: 'return=minimal'
+    });
+  } catch(err) { console.error('deleteExpense error:', err); }
+}
+
+// ─── SUPABASE: INSERT HISTORY ─────────────────────────
+async function insertHistory(entry) {
+  if (!USE_SUPABASE) return;
+  try {
+    await sbFetch('cutoff_history', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({
+        user_id: USER_ID,
+        cutoff:  entry.cutoff,
+        month:   entry.month,
+        salary:  entry.salary,
+        spent:   entry.spent
+      })
+    });
+  } catch(err) { console.error('insertHistory error:', err); }
+}
+
+function save() { saveLocal(); }
+
+// ─── INIT ─────────────────────────────────────────────
+function refreshAll() {
+  document.getElementById('salaryInput').value = state.salary || '';
+  document.getElementById('needsSlider').value = state.needsPct;
+  document.getElementById('wantsSlider').value = state.wantsPct;
+  document.getElementById('savingsSlider').value = state.savingsPct;
+  document.getElementById('needsBadge').textContent = state.needsPct + '%';
+  document.getElementById('wantsBadge').textContent = state.wantsPct + '%';
+  document.getElementById('savingsBadge').textContent = state.savingsPct + '%';
+  document.getElementById('needsBar').style.width = state.needsPct + '%';
+  document.getElementById('wantsBar').style.width = state.wantsPct + '%';
+  document.getElementById('savingsBar').style.width = state.savingsPct + '%';
+  document.querySelectorAll('.cutoff-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.cutoff === state.cutoff);
+  });
+  updateDisplay();
+  updateRings();
+  renderExpenses();
+  renderSummary();
+  renderHistory();
+}
+
+function init() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-PH', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  document.querySelectorAll('[id^="dateBadge"]').forEach(el => el.textContent = dateStr);
+  refreshAll();
+  if (USE_SUPABASE) loadFromSupabase();
+}
+
+// ─── SALARY ───────────────────────────────────────────
+function setSalary() {
+  const val = parseFloat(document.getElementById('salaryInput').value) || 0;
+  state.salary = val;
+  saveSettings();
+  updateDisplay();
+  updateRings();
+  renderSummary();
+  showToast('Salary set! 💸');
+}
+
+function fmt(n) {
+  return '₱' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function updateDisplay() {
+  const s = state.salary;
+  document.getElementById('salaryDisplay').innerHTML = `<span>₱</span>${s.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+
+  const n = s * state.needsPct / 100;
+  const w = s * state.wantsPct / 100;
+  const sv = s * state.savingsPct / 100;
+
+  document.getElementById('needsAmt').textContent = fmt(n);
+  document.getElementById('wantsAmt').textContent = fmt(w);
+  document.getElementById('savingsAmt').textContent = fmt(sv);
+}
+
+// ─── SPLITS ───────────────────────────────────────────
+function updateSplits() {
+  const ns = parseInt(document.getElementById('needsSlider').value);
+  const ws = parseInt(document.getElementById('wantsSlider').value);
+  const ss = parseInt(document.getElementById('savingsSlider').value);
+  const total = ns + ws + ss;
+
+  state.needsPct = ns;
+  state.wantsPct = ws;
+  state.savingsPct = ss;
+
+  document.getElementById('needsBadge').textContent = ns + '%';
+  document.getElementById('wantsBadge').textContent = ws + '%';
+  document.getElementById('savingsBadge').textContent = ss + '%';
+
+  document.getElementById('needsBar').style.width = ns + '%';
+  document.getElementById('wantsBar').style.width = ws + '%';
+  document.getElementById('savingsBar').style.width = ss + '%';
+
+  const warn = document.getElementById('pctWarning');
+  if (total !== 100) {
+    warn.style.display = 'block';
+    warn.textContent = `Total is ${total}% — should be 100%`;
+  } else {
+    warn.style.display = 'none';
+  }
+
+  save();
+  saveSettings();
+  updateDisplay();
+  updateRings();
+  renderSummary();
+}
+
+function selectCutoff(cutoff, el) {
+  state.cutoff = cutoff;
+  state.expenses = [];
+  document.querySelectorAll('.cutoff-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  saveLocal();
+  if (USE_SUPABASE) {
+    loadFromSupabase();
+  } else {
+    renderExpenses();
+    updateRings();
+    renderSummary();
+  }
+}
+
+// ─── EXPENSES ─────────────────────────────────────────
+let formOpen = false;
+function toggleForm() {
+  formOpen = !formOpen;
+  document.getElementById('addForm').classList.toggle('open', formOpen);
+}
+
+function addExpense() {
+  const name = document.getElementById('expName').value.trim();
+  const amt = parseFloat(document.getElementById('expAmt').value) || 0;
+  const cat = document.getElementById('expCat').value;
+  if (!name || amt <= 0) { showToast('Fill in all fields!'); return; }
+
+  const exp = { id: Date.now(), name, amount: amt, category: cat, cutoff: state.cutoff, date: new Date().toLocaleDateString('en-PH') };
+  state.expenses.push(exp);
+  saveLocal();
+  document.getElementById('expName').value = '';
+  document.getElementById('expAmt').value = '';
+  toggleForm();
+  renderExpenses();
+  updateRings();
+  renderSummary();
+  showToast('Expense added!');
+  insertExpense(exp).then(() => { saveLocal(); renderExpenses(); });
+}
+
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e => e.id !== id);
+  saveLocal();
+  renderExpenses();
+  updateRings();
+  renderSummary();
+  deleteExpenseFromDB(id);
+}
+
+function currentExpenses() {
+  return state.expenses.filter(e => e.cutoff === state.cutoff);
+}
+
+function renderExpenses() {
+  const list = document.getElementById('expenseList');
+  const items = currentExpenses();
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No expenses yet.<br>Tap "+ Add" to track spending.</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(e => `
+    <div class="expense-item">
+      <div class="expense-dot ${e.category}"></div>
+      <div class="expense-info">
+        <div class="expense-name">${e.name}</div>
+        <div class="expense-cat ${e.category}">${e.category}</div>
+      </div>
+      <div class="expense-amount">${fmt(e.amount)}</div>
+      <button class="btn-del" onclick="deleteExpense(${e.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ─── RINGS ────────────────────────────────────────────
+function updateRings() {
+  const s = state.salary;
+  const items = currentExpenses();
+  const circumference = 175.9;
+
+  function setRing(id, budget, spent, remTextId) {
+    const rem = Math.max(0, budget - spent);
+    const pct = budget > 0 ? rem / budget : 0;
+    const offset = circumference * (1 - pct);
+    document.getElementById(id).style.strokeDashoffset = offset;
+    document.getElementById(remTextId).textContent = fmt(rem);
+  }
+
+  const needsBudget = s * state.needsPct / 100;
+  const wantsBudget = s * state.wantsPct / 100;
+  const savingsBudget = s * state.savingsPct / 100;
+
+  const needsSpent = items.filter(e => e.category === 'needs').reduce((a, b) => a + b.amount, 0);
+  const wantsSpent = items.filter(e => e.category === 'wants').reduce((a, b) => a + b.amount, 0);
+  const savingsSpent = items.filter(e => e.category === 'savings').reduce((a, b) => a + b.amount, 0);
+
+  setRing('needsRing', needsBudget, needsSpent, 'needsRemText');
+  setRing('wantsRing', wantsBudget, wantsSpent, 'wantsRemText');
+  setRing('savingsRing', savingsBudget, savingsSpent, 'savingsRemText');
+}
+
+// ─── SUMMARY ──────────────────────────────────────────
+function renderSummary() {
+  const s = state.salary;
+  const items = currentExpenses();
+  const needsBudget = s * state.needsPct / 100;
+  const wantsBudget = s * state.wantsPct / 100;
+  const savingsBudget = s * state.savingsPct / 100;
+
+  const needsSpent = items.filter(e => e.category === 'needs').reduce((a, b) => a + b.amount, 0);
+  const wantsSpent = items.filter(e => e.category === 'wants').reduce((a, b) => a + b.amount, 0);
+  const savingsSpent = items.filter(e => e.category === 'savings').reduce((a, b) => a + b.amount, 0);
+
+  const remaining = s - needsSpent - wantsSpent - savingsSpent;
+
+  document.getElementById('sumSalary').textContent = fmt(s);
+  document.getElementById('sumNeedsBudget').textContent = fmt(needsBudget);
+  document.getElementById('sumNeedsSpent').textContent = fmt(needsSpent);
+  document.getElementById('sumWantsBudget').textContent = fmt(wantsBudget);
+  document.getElementById('sumWantsSpent').textContent = fmt(wantsSpent);
+  document.getElementById('sumSavingsBudget').textContent = fmt(savingsBudget);
+  document.getElementById('sumSavingsActual').textContent = fmt(savingsSpent);
+  document.getElementById('sumRemaining').textContent = fmt(Math.max(0, remaining));
+  document.getElementById('sumRemaining').className = 'summary-row-val ' + (remaining >= 0 ? 'pos' : 'neg');
+}
+
+// ─── HISTORY ──────────────────────────────────────────
+function saveCutoff() {
+  const s = state.salary;
+  if (!s) { showToast('Set a salary first!'); return; }
+  const items = currentExpenses();
+  const spent = items.reduce((a, b) => a + b.amount, 0);
+  const entry = {
+    cutoff: state.cutoff,
+    month: new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }),
+    salary: s,
+    spent,
+    date: new Date().toLocaleDateString('en-PH')
+  };
+  state.history.unshift(entry);
+  saveLocal();
+  renderHistory();
+  insertHistory(entry);
+  showToast('Cutoff saved! 📅');
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!state.history.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No past cutoffs saved yet.</div></div>`;
+    return;
+  }
+  list.innerHTML = state.history.map(h => `
+    <div class="history-entry">
+      <div>
+        <div class="history-cutoff">${h.cutoff} Cutoff — ${h.month}</div>
+        <div class="history-sub">Spent: ${fmt(h.spent)} · Saved on ${h.date}</div>
+      </div>
+      <div class="history-total">${fmt(h.salary)}</div>
+    </div>
+  `).join('');
+}
+
+// ─── NAVIGATION ───────────────────────────────────────
+function goPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+}
+
+// ─── TOAST ────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── START ────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
